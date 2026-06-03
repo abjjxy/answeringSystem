@@ -2,17 +2,9 @@
 import { ref, onMounted } from 'vue';
 import NetworkGraph from './components/NetworkGraph.vue';
 import ChatPanel from './components/ChatPanel.vue';
-import QueryPanel from './components/QueryPanel.vue';
-import DataBrowser from './components/DataBrowser.vue';
-import GraphStructures from './components/GraphStructures.vue';
-import OntologySpec from './components/OntologySpec.vue';
 import type { GraphData, GraphNode, ChatMessage } from './types';
 import { 
   Sparkles, 
-  GitCompare, 
-  FileCode, 
-  Cpu, 
-  Database, 
   Feather, 
   Clock 
 } from 'lucide-vue-next';
@@ -21,7 +13,6 @@ const graphData = ref<GraphData>({ nodes: [], links: [] });
 const selectedNode = ref<GraphNode | null>(null);
 const messages = ref<ChatMessage[]>([]);
 const loading = ref(false);
-const activeTab = ref<'chat' | 'sparql' | 'align' | 'stats' | 'ontology'>('chat');
 
 // Load D3 graph network on mount
 onMounted(async () => {
@@ -157,108 +148,18 @@ const handleSendMessage = async (text: string) => {
             {{ selectedNode.intro }}
           </p>
 
-          <div class="pt-1.5 border-t border-gray-50 flex gap-2">
-            <button
-              @click="activeTab = 'align'"
-              class="px-3 py-1.5 text-[10.5px] font-sans font-medium hover:bg-[#FAF8F5] border border-[#E9E4DC] hover:border-[#8C2D19]/40 text-[#5C5246] hover:text-[#8C2D19] rounded-md transition-all duration-150 flex items-center gap-1 cursor-pointer"
-            >
-              <GitCompare class="w-3.5 h-3.5 text-[#8C2D19]" />
-              <span>在异源传记融合对齐本中研读</span>
-            </button>
-          </div>
         </div>
       </div>
 
-      <!-- RIGHT COLUMN: TAB WORKSPACE CONTROLLER (7 cols) -->
+      <!-- RIGHT COLUMN: CHAT PANEL (7 cols) -->
       <div class="lg:col-span-7 flex flex-col gap-4 h-full">
-        <!-- Tab Selection Row -->
-        <div class="flex flex-wrap gap-1 bg-[#E9E4DC] p-1 rounded-xl">
-          <button
-            @click="activeTab = 'chat'"
-            :class="[
-              'flex-1 px-3 py-2 text-xs font-medium rounded-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer font-sans',
-              activeTab === 'chat' ? 'bg-[#8C2D19] text-white shadow-xs' : 'text-[#5C5246] hover:bg-white/40'
-            ]"
-          >
-            <Sparkles class="w-3.5 h-3.5" />
-            <span class="hidden sm:inline">墨香AI智能问策</span>
-            <span class="sm:hidden">智能问答</span>
-          </button>
-
-          <button
-            @click="activeTab = 'stats'"
-            :class="[
-              'flex-1 px-3 py-2 text-xs font-medium rounded-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer font-sans',
-              activeTab === 'stats' ? 'bg-[#8C2D19] text-white shadow-xs' : 'text-[#5C5246] hover:bg-white/40'
-            ]"
-          >
-            <Cpu class="w-3.5 h-3.5" />
-            <span class="hidden sm:inline">图论与传承计算</span>
-            <span class="sm:hidden">图论计算</span>
-          </button>
-
-          <button
-            @click="activeTab = 'align'"
-            :class="[
-              'flex-1 px-3 py-2 text-xs font-medium rounded-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer font-sans',
-              activeTab === 'align' ? 'bg-[#8C2D19] text-white shadow-xs' : 'text-[#5C5246] hover:bg-white/40'
-            ]"
-          >
-            <GitCompare class="w-3.5 h-3.5" />
-            <span class="hidden sm:inline">跨库融合考证</span>
-            <span class="sm:hidden">数据库对齐</span>
-          </button>
-
-          <button
-            @click="activeTab = 'sparql'"
-            :class="[
-              'flex-1 px-3 py-2 text-xs font-medium rounded-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer font-sans',
-              activeTab === 'sparql' ? 'bg-[#8C2D19] text-white shadow-xs' : 'text-[#5C5246] hover:bg-white/40'
-            ]"
-          >
-            <FileCode class="w-3.5 h-3.5" />
-            <span class="hidden sm:inline">SPARQL 检索</span>
-            <span class="sm:hidden">SPARQL</span>
-          </button>
-
-          <button
-            @click="activeTab = 'ontology'"
-            :class="[
-              'flex-1 px-3 py-2 text-xs font-medium rounded-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer font-sans',
-              activeTab === 'ontology' ? 'bg-[#8C2D19] text-white shadow-xs' : 'text-[#5C5246] hover:bg-white/40'
-            ]"
-          >
-            <Database class="w-3.5 h-3.5" />
-            <span class="hidden sm:inline">语义本体规范</span>
-            <span class="sm:hidden">本体</span>
-          </button>
-        </div>
-
-        <!-- Active Tab Panel Body -->
+        <!-- Chat Panel -->
         <div class="flex-1 overflow-y-auto">
-          <div v-show="activeTab === 'chat'" class="h-full">
-            <ChatPanel 
-              :messages="messages" 
-              @send-message="handleSendMessage" 
-              :loading="loading" 
-            />
-          </div>
-
-          <div v-if="activeTab === 'sparql'">
-            <QueryPanel />
-          </div>
-
-          <div v-if="activeTab === 'align'">
-            <DataBrowser />
-          </div>
-
-          <div v-if="activeTab === 'stats'">
-            <GraphStructures />
-          </div>
-
-          <div v-if="activeTab === 'ontology'">
-            <OntologySpec />
-          </div>
+          <ChatPanel 
+            :messages="messages" 
+            @send-message="handleSendMessage" 
+            :loading="loading" 
+          />
         </div>
       </div>
 
