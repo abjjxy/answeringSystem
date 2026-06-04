@@ -93,7 +93,7 @@ const handleSendMessage = async (text: string) => {
           </div>
           <div>
             <h1 class="text-xl md:text-2xl font-serif font-bold tracking-tight text-white flex items-center gap-2">
-              <span>印人与历代书法家金石语义图谱问答系统 [Vue3]</span>
+              <span>印人与历代书法家金石语义图谱问答系统</span>
             </h1>
             <p class="text-[11px] text-[#C1B5A3] font-serif tracking-wide mt-0.5">
               基于金石古籍《印人传》· 跨越 CBDB 与 CTEXT 融合对齐 · 搭载大模型协同工作流之学术大成
