@@ -2,6 +2,7 @@
 import { ref, watch, nextTick } from 'vue';
 import type { ChatMessage, AgentStep } from '../types';
 import { Send, Sparkles, HelpCircle, Loader2, PlayCircle, FileSpreadsheet, Network } from 'lucide-vue-next';
+import { marked } from 'marked';
 
 interface Props {
   messages: ChatMessage[];
@@ -42,6 +43,10 @@ const scrollToBottom = () => {
   nextTick(() => {
     messagesEndRef.value?.scrollIntoView({ behavior: 'smooth' });
   });
+};
+
+const renderMarkdown = (text: string) => {
+  return marked.parse(text || '');
 };
 
 watch(() => props.messages, scrollToBottom, { deep: true });
@@ -108,7 +113,8 @@ watch(() => props.loading, scrollToBottom);
             ]"
           >
             <!-- Regular content -->
-            <span class="whitespace-pre-wrap">{{ msg.content }}</span>
+            <div v-if="msg.role === 'assistant'" class="markdown-body" v-html="renderMarkdown(msg.content)"></div>
+            <span v-else class="whitespace-pre-wrap">{{ msg.content }}</span>
 
             <!-- DB Alignment visual reference -->
             <div v-if="msg.role === 'assistant' && msg.visualData" class="mt-3">

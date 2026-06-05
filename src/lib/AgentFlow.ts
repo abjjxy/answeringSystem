@@ -39,7 +39,7 @@ export class AgentFlow {
       createStep('解析问句 & 任务分流', 'start', `对查询「${userQuery}」进行语义意图分析，决定底层路线...`);
       
       const routerPrompt = `
-你是一个专精于中国《印人传》与历代书法家知识图谱的智能分析路由器。
+你是一个专精于《印人传》篆刻艺术与金石学知识图谱的智能分析路由器。
 当前用户的查询语句为: "${userQuery}"
 
 请分析该查询最适合以下哪一种处理逻辑。只能输出一个合法的 JSON，不要包裹任何 markdown：
@@ -51,14 +51,14 @@ export class AgentFlow {
 }
 
 分流标准：
-1. "tool_call"：如果查询的是单个具体人物的详细生平、或者问某个人的字号(e.g., "文彭的字号是什么")、他的父亲或子女师承(e.g., "何震的老师是谁")、他属于哪个流派或擅长书体，或者直接需要计算网络度指标、分析人物社交师承路径(e.g., "查一下何震和邓石如之间的师承路径")。
+1. "tool_call"：如果查询的是单个具体人物的详细生平、或者问某个人的字号(e.g., "文彭的字号是什么")、他的父亲或子女师承(e.g., "何震的老师是谁")、他属于哪个流派或擅长的印风，或者直接需要计算网络度指标、分析人物师承路径(e.g., "查一下何震和邓石如之间的师承路径")。
    - "QueryPersonDetails" : Args: { "name": "文彭" }
    - "QueryRelations" : Args: { "name": "文彭" }
    - "QueryAestheticsAndSchool" : Args: { "name": "文彭" }
    - "GetCentralityAnalysis" : Args: {}
    - "FindPathBetween" : Args: { "personA": "文徵明", "personB": "吴昌硕" }
-2. "sparql_generation"：如果用户的提问涉及多重条件关联、复杂的汇总统计、过滤比较(e.g., "找出所有生于1500年之后且擅长楷书的清代人物"、"哪些人开创了流派，他们分别属于什么朝代？"、"查一下文徵明弟子中擅长隶书的人")。
-3. "direct_llm"：用户聊日常、问关于书法篆刻的泛化美学理论或超出本图谱人物生平的问题。
+2. "sparql_generation"：如果用户的提问涉及多重条件关联、复杂的汇总统计、过滤比较(e.g., "找出所有生于1500年之后的清代篆刻家"、"哪些人开创了印派，他们分别属于什么朝代？"、"查一下文徵明弟子中擅长秦汉印风的人")。
+3. "direct_llm"：用户聊日常、问关于篆刻艺术的泛化美学理论或超出本图谱人物生平的问题。
 `;
 
       const routeResult = await this.ai.models.generateContent({
@@ -110,17 +110,17 @@ export class AgentFlow {
         createStep('大模型精整回复', 'start', '将工具返回的严谨结构化数据输入Gemini，编织成流畅典雅的中文陈述。');
         
         const finalAnsPrompt = `
-您是一个古典文化修养极高的中国书法与印学专家。
+您是一个古典文化修养极高的中国篆刻艺术与金石学专家。
 用户问句: "${userQuery}"
 我们为您调用了底层的知识图谱专属APIs，并查询到以下结构化元数据：
 ${toolOutput}
 
-请基于上述结构化查询结果，给用户写一个优美、客观、详实的手笔回答。
+请基于上述结构化查询结果，给用户写一个优美、客观、详实的回答。
 请注意：
 1. 恪守事实，优先使用查询回传的数据回答。
-2. 保持语言风格高雅，有笔墨墨香之美。
+2. 保持语言风格高雅，传递篆刻艺术之美。
 3. 请用 Markdown 输出。
-4. 在回答最后附加列出参考的 CTEXT 或 CBDB 的对齐标识（如果有的话）。
+4. 在回答最后附加列出参考的数据源标识（如果有的话）。
 `;
         const ansResponse = await this.ai.models.generateContent({
           model: 'gemini-3.5-flash',
@@ -153,7 +153,7 @@ ${toolOutput}
 本体属性参考：
 - ex:zi (字) - e.g., "寿承_xsd:string"
 - ex:hao (号) - e.g., "三桥_xsd:string"
-- ex:dynasty (朝代) - values: "Eastern Jin", "Tang", "Yuan", "Ming", "Qing", "Late Qing / Republic"
+- ex:dynasty (朝代) - values: "东晋", "唐", "元", "明", "清", "晚清 / 民国"
 - ex:birthYear (生年_xsd:integer) - e.g. 1498
 - ex:deathYear (卒年_xsd:integer) - e.g. 1573
 - ex:father (父亲), ex:child (子女), ex:studentOf (师从), ex:teacherOf (授学), ex:interactedWith (交游)
@@ -168,7 +168,7 @@ ${toolOutput}
 输出:
 SELECT ?name ?schoolLabel WHERE {
   ?person rdf:type ex:Person .
-  ?person ex:dynasty "Qing" .
+  ?person ex:dynasty "清" .
   ?person ex:founderOf ?school .
   ?person rdfs:label ?name .
   ?school rdfs:label ?schoolLabel .
@@ -236,10 +236,10 @@ ${JSON.stringify(queryResult.rows, null, 2)}
 `;
         } else {
           ansPrompt = `
-用户想查询关于中国篆刻书法家提问: "${userQuery}"
+用户想查询关于中国篆刻艺术家提问: "${userQuery}"
 我们在RDF图谱中进行SPARQL多步关联查找未能找到直接匹配（可能是图谱范围限制）。
-请您发挥大语言模型原生的中国历史、书画、金石印章知识储备，直接为用户进行全面、专业且典雅的科普和分析。
-提示用户：本回答基于通用古典文学大模型和历史金石档案知识直接生成。
+请您发挥大语言模型原生的中国历史、篆刻艺术、金石学知识储备，直接为用户附进行全面、专业且典雅的科普和分析。
+提示用户：本回答基于通用古典文学大模型和金石学简散知识直接生成。
 `;
         }
 
@@ -261,11 +261,11 @@ ${JSON.stringify(queryResult.rows, null, 2)}
       }
 
       // 2c. DIRECT LLM PATH (GENERAL HISTORY/CHITCHAT)
-      createStep('大模型深度通识应答', 'start', '非图谱关系型通识性知识问答，加载大模型中华国粹金石美学知识直接生成...');
+      createStep('大模型深度通识应答', 'start', '非图谱关系型通识性知识问答，加载大模型中华国粹篆刻艺术知识直接生成...');
       const directResponse = await this.ai.models.generateContent({
         model: 'gemini-3.5-flash',
         contents: `
-请作为印章金石与中国历史书法学识渊博的大师，优雅地回答下述用户的提问：
+请作为篆刻艺术与金石学学识渊博的大师，优雅地回答下述用户的提问：
 "${userQuery}"
 `
       });

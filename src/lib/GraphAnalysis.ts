@@ -188,7 +188,7 @@ export class GraphAnalysis {
       let leaderName = members[0].label;
       output.push({
         communityId: index++,
-        leader: name === '未有专属流派/独立巨匠' ? '历代书法名家' : leaderName,
+        leader: name === '未有专属流派/独立巨匹' ? '篆刻大师' : leaderName,
         members
       });
     }

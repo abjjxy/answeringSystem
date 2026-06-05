@@ -1,6 +1,6 @@
 {
-  "name": "印人与历代书法家知识图谱问答系统",
-  "description": "基于《印人传》及《中国历代书法家图表》，深度融合RDF/Turtle、SPARQL查询、ctext与CBDB对齐、D3.js力导向多模态关系可视化，支撑智能化协同代理对话，呈献墨香雅致的学术探索空间。",
+  "name": "印人传知识图谱问答系统",
+  "description": "基于《印人传》，深度融合RDF/Turtle、SPARQL查询、D3.js力导向关系可视化，支撑智能化协同代理对话，呈献篆刻艺术与金石学的学术探索空间。",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

@@ -396,7 +396,7 @@ export class Triplestore {
       // Skip declarations or prefix injections inside query if any
       if (clause.toLowerCase().startsWith('prefix')) return;
 
-      // Check if it's a Filter: FILTER(?birthYear > 1500) or FILTER(?dynasty = "Ming")
+      // Check if it's a Filter: FILTER(?birthYear > 1500) or FILTER(?dynasty = "明")
       if (clause.toUpperCase().startsWith('FILTER')) {
         const filterMatch = clause.match(/FILTER\s*\(\s*(\?\w+)\s*([=!><]+)\s*([\s\S]+?)\s*\)/i);
         if (filterMatch) {

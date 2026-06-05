@@ -93,10 +93,10 @@ const handleSendMessage = async (text: string) => {
           </div>
           <div>
             <h1 class="text-xl md:text-2xl font-serif font-bold tracking-tight text-white flex items-center gap-2">
-              <span>印人与历代书法家金石语义图谱问答系统</span>
+              <span>印人传篆刻金石语义图谱问答系统</span>
             </h1>
             <p class="text-[11px] text-[#C1B5A3] font-serif tracking-wide mt-0.5">
-              基于金石古籍《印人传》· 跨越 CBDB 与 CTEXT 融合对齐 · 搭载大模型协同工作流之学术大成
+              基于《印人传》· 篆刻艺术与人物关系数据融合 · 搭载大模型协同工作流之学术大成
             </p>
           </div>
         </div>
@@ -133,10 +133,9 @@ const handleSendMessage = async (text: string) => {
           <div class="border-b border-gray-100 pb-1.5 flex items-center justify-between">
             <div>
               <h3 class="text-base font-bold text-[#2D241E]">{{ selectedNode.label }}</h3>
-              <span class="text-[10px] text-gray-400 font-mono">{{ selectedNode.id }}</span>
             </div>
             <span class="text-xs px-2.5 py-0.5 bg-[#F4EFE6] text-[#8C2D19] border border-[#E9E4DC] rounded-full font-serif font-bold">
-              {{ selectedNode.type === 'Person' ? '金石人物' : selectedNode.type === 'School' ? '派门系列' : selectedNode.type === 'ScriptStyle' ? '书体印风' : '祖地籍地' }}
+              {{ selectedNode.type === 'Person' ? '印人' : selectedNode.type === 'School' ? '派门系列' : selectedNode.type === 'ScriptStyle' ? '印风印体' : '祖地籍地' }}
             </span>
           </div>
 
@@ -168,8 +167,8 @@ const handleSendMessage = async (text: string) => {
     <!-- Styled Humanistic Footer -->
     <footer class="px-6 py-3.5 bg-[#412C1E] border-t border-[#2D241E] text-[#C1B5A3] text-[10.5px] font-serif tracking-wide text-center shrink-0">
       <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
-        <span>印谱问答系统 · 古典文献数字化金石学语义网系统示范</span>
-        <span>© 1726 - 2026 《印人传》印学图谱数据融合委员会 · 敬呈</span>
+        <span>《印人传》问答系统 · 篆刻艺术古籍知识数字化系统示范</span>
+        <span>© 1726 - 2026 《印人传》篆刻知识图谱研究委员会 · 敬呈</span>
       </div>
     </footer>
   </div>

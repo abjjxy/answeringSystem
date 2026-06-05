@@ -2,9 +2,9 @@
 import { Database } from 'lucide-vue-next';
 
 const classes = [
-  { name: 'ex:Person', label: '人物 (Person)', comment: '印人传记录的历代篆刻家、书法名儒或金石名士。为图谱核心实体类别。' },
+  { name: 'ex:Person', label: '人物 (Person)', comment: '《印人传》记录的篆刻家、印学家或金石名士。为图谱核心实体类别。' },
   { name: 'ex:School', label: '艺术门派流派 (School)', comment: '金石篆刻发展中自然沉淀形成的各具风骨特征的印社学派，如吴门派、徽雪渔派、西泠浙派、皖派等。' },
-  { name: 'ex:ScriptStyle', label: '书体印风风格 (ScriptStyle)', comment: '人物所精通的艺术风格和书法体格，包括秦汉印风、篆书、隶书、行书、草书、魏碑体等。' },
+  { name: 'ex:ScriptStyle', label: '印风风格 (ScriptStyle)', comment: '人物所粿颐的艺术风格和篆刻印风，包括秦汉印风、拟古印、自然印、派系印转等。' },
   { name: 'ex:Location', label: '地理名籍 (Location)', comment: '艺术人物的籍贯原籍所在地，通常用于地缘流动及流派地理分布关联。' }
 ];
 
@@ -27,7 +27,7 @@ const dataProps = [
   { prop: 'ex:birthYear', label: '生年', range: 'xsd:integer', comment: '西历精确生辰年份数值，充当图谱高精过滤和生平跨度比对。' },
   { prop: 'ex:deathYear', label: '卒年', range: 'xsd:integer', comment: '西历卒于哪一年的年份数值。' },
   { prop: 'ex:ctextId', label: 'ctext对齐ID', range: 'xsd:string', comment: '与古籍文献数字图书馆(ctext.org)中唯一实体节点的统一标识绑定。' },
-  { prop: 'ex:cbdbId', label: 'CBDB对齐ID', range: 'xsd:string', comment: '与哈佛历代传记人物数据库(CBDB)中对应人物节点唯一编码关联。' },
+  { prop: 'ex:cbdbId', label: 'CBDB对齐ID', range: 'xsd:string', comment: '与古代清史人物数据库中对应人物节点底帘编码关联。' },
   { prop: 'ex:introduction', label: '简介', range: 'xsd:string', comment: '详实的考据生平及艺术刀功成就小史。' }
 ];
 </script>
@@ -38,7 +38,7 @@ const dataProps = [
     <div>
       <h2 class="font-serif font-bold text-lg text-[#2D241E] flex items-center gap-2">
         <Database class="w-5 h-5 text-[#8C2D19]" />
-        <span>金石书画古籍语义本体论 (Ontology Schema Architecture)</span>
+        <span>篆刻艺术古籍语义本体论 (Ontology Schema Architecture)</span>
       </h2>
       <p class="text-xs text-gray-500 mt-1">
         本篇规定了语义网中《印人传》知识体系的底层 OWL / RDF Schema 本体描述。包含各类定义、对象关系属性 Domain (定义域/主语) 与 Range (值域/宾语)，以及数据属性类。

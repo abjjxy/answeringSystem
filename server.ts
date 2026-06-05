@@ -38,7 +38,7 @@ async function startServer() {
 
   // API Health Indicator
   app.get('/api/health', (req, res) => {
-    res.json({ status: 'ok', message: '中国历代金石书画家知识图谱服务在线。' });
+    res.json({ status: 'ok', message: '《印人传》篆刻金石学知识图谱服务在线。' });
   });
 
   // POST /api/query: Core Agent Q&A loop

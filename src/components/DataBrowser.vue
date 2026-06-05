@@ -55,7 +55,7 @@ const selectEntity = (item: BrowserItem) => {
         <span>文渊对齐 · 异源学术数据库融合中心</span>
       </h2>
       <p class="text-xs text-gray-500 mt-1">
-        本节点展示将由大模型抽取的印人知识对齐至金石领域及中国古代史权威数据库——中国历代人物传记数据库（CBDB）及古籍数字化图书馆（CTEXT）的链路。
+        本节点展示将由大模型抽取的印人知识对齐至篆刻艺术领域及中国古代史权威数据库——中国清史人物数据库及古籍数字化图书馆的链路。
       </p>
     </div>
 
@@ -191,7 +191,7 @@ const selectEntity = (item: BrowserItem) => {
               <div class="px-3 py-2 bg-indigo-50 border-b border-indigo-100 flex items-center justify-between text-xs font-sans text-indigo-800 font-semibold">
                 <div class="flex items-center gap-1">
                   <GitCompare class="w-3.5 h-3.5" />
-                  <span>历代传记数据库 (CBDB)</span>
+                  <span>清史人物数据库 (CBDB)</span>
                 </div>
                 <span v-if="selectedEntity.alignment.cbdbId" class="bg-indigo-100 text-indigo-700 px-1 py-0.5 text-[8px] rounded font-mono">
                   ID: {{ selectedEntity.alignment.cbdbId }}

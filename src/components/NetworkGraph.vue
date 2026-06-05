@@ -419,7 +419,7 @@ const handleResetZoom = () => {
             v-model="showRelations.style"
             class="rounded border-[#C1B5A3] text-[#8C2D19] focus:ring-[#8C2D19] w-3.5 h-3.5 cursor-pointer"
           />
-          <span>书体印风</span>
+          <span>印风</span>
         </label>
         <label class="flex items-center gap-1 cursor-pointer hover:text-[#2D241E]">
           <input
@@ -485,7 +485,6 @@ const handleResetZoom = () => {
       <!-- Mini hover display -->
       <div v-if="hoveredNode" class="absolute left-3 top-3 p-2 bg-white/95 border border-[#8C2D19]/30 rounded-lg shadow-md max-w-sm pointer-events-none text-xs">
         <div class="font-bold text-[#8C2D19] font-serif">{{ hoveredNode.label }}</div>
-        <div class="text-[10px] text-gray-500 mt-0.5 font-mono">{{ hoveredNode.id }}</div>
         <div v-if="hoveredNode.dynasty" class="text-gray-700 mt-1 font-serif">朝代：{{ hoveredNode.dynasty }}</div>
         <div v-if="hoveredNode.intro" class="text-gray-500 text-[10px] line-clamp-2 mt-1 leading-relaxed border-t border-gray-100 pt-1 font-sans">{{ hoveredNode.intro }}</div>
       </div>

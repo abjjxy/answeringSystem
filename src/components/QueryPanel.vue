@@ -5,7 +5,7 @@ import type { SPARQLResult } from '../types';
 
 const queryString = ref(`SELECT ?personLabel ?birth ?dynasty WHERE {
   ?person rdf:type ex:Person .
-  ?person ex:dynasty "Ming" .
+  ?person ex:dynasty "明" .
   ?person ex:birthYear ?birth .
   ?person rdfs:label ?personLabel .
   FILTER(?birth > 1500)
@@ -20,7 +20,7 @@ const templates = [
     title: '明代金石家及生年',
     query: `SELECT ?name ?birth ?intro WHERE {
   ?person rdf:type ex:Person .
-  ?person ex:dynasty "Ming" .
+  ?person ex:dynasty "明" .
   ?person ex:birthYear ?birth .
   ?person rdfs:label ?name .
   ?person ex:introduction ?intro .
@@ -155,9 +155,9 @@ const useTemplate = (queryText: string) => {
           <div>
             <strong class="text-gray-700">主要实体概念：</strong>
             <ul class="list-disc pl-3.5 text-gray-500 mt-0.5">
-              <li><code class="font-mono">ex:Person</code> : 历史文人/印家</li>
+              <li><code class="font-mono">ex:Person</code> : 印人/篆刻家</li>
               <li><code class="font-mono">ex:School</code> : 艺术门派流派</li>
-              <li><code class="font-mono">ex:ScriptStyle</code> : 书体风格</li>
+              <li><code class="font-mono">ex:ScriptStyle</code> : 印风风格</li>
             </ul>
           </div>
           <div>

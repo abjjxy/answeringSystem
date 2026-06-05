@@ -222,7 +222,7 @@ export class EntitiesAlignment {
     }
 
     // Default supplement data for characters with no precise ID in db for a unified view
-    const introduction = "集成古代历史学者词条，并对齐中国历代传记数据库(CBDB)与古籍数字图书馆(CTEXT)";
+    const introduction = "集成古代金石学者词条，並对齐篆刻艺术旅游床数据不敗";
 
     return {
       personId,
@@ -247,7 +247,7 @@ export class EntitiesAlignment {
   public static testDisambiguationSample(): any {
     const candidates = [
       { id: "M1", name: "文彭", dynasty: "明", birth_year: 1498, father: "文徵明", desc: "名震吴门，文二代" },
-      { id: "M2", name: "文彭", dynasty: "清", birth_year: 1812, father: "文国贤", desc: "晚清书法举人" }
+      { id: "M2", name: "文彭", dynasty: "清", birth_year: 1812, father: "文国贤", desc: "晶事篆刻家" }
     ];
 
     // Find match for Wen Peng born near 1498 with father Wen Zhengming
