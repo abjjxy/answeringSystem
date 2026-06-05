@@ -20,8 +20,8 @@ const messagesEndRef = ref<HTMLDivElement | null>(null);
 const predefinedQueries = [
   '文彭属于什么印派？他的字号、生卒年及父亲是谁？',
   '查一下何震和印人传里人物的交游好友圈',
-  '谁开创了西泠印学（浙派）？有哪些传人和风格？',
-  '找出所有在清代的、擅长篆书和隶书的皖派人物名单及生年',
+  '谁开创了西泠印学（浙派）？有哪些传人和印风？',
+  '找出所有在清代、擅长浙派或皖派印风的主要人物名单及生年',
   '分析丁敬到吴昌硕在金石师承网络中的衔接路径'
 ];
 
@@ -210,7 +210,7 @@ watch(() => props.loading, scrollToBottom);
         <textarea
           v-model="inputText"
           @keydown="handleKeyPress"
-          placeholder="雅问，如：'谁是何震的老师，他们精通什么作风？' (Enter直接发送)"
+          placeholder="雅问，如：'谁是何震的老师，他们精通什么印风？' (Enter直接发送)"
           class="flex-1 min-h-[44px] max-h-[120px] rounded-lg border border-[#C1B5A3] bg-white px-3 py-2.5 text-xs text-[#2D241E] focus:border-[#8C2D19] focus:outline-none focus:ring-1 focus:ring-[#8C2D19] resize-none"
           rows="2"
         />
