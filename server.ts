@@ -97,7 +97,8 @@ async function startServer() {
       const graphData = triplestore.extractGraphData();
       const centralities = GraphAnalysis.analyzeCentrality(graphData);
       const communities = GraphAnalysis.detectCommunities(graphData);
-      res.json({ centralities, communities });
+      const schools = GraphAnalysis.analyzeSchools(graphData);
+      res.json({ centralities, communities, schools });
     } catch (err: any) {
       res.status(500).json({ error: '结构分析计算失败', detail: err.message });
     }

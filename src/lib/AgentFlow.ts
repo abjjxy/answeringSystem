@@ -159,7 +159,7 @@ ${toolOutput}
 - ex:father (父亲), ex:child (子女), ex:studentOf (师从), ex:teacherOf (授学), ex:interactedWith (交游)
 - ex:founderOf (开创流派) - values: ex:WumenSchool, ex:XilingSchool, ex:WanpaiSchool, ex:XueyuSchool, ex:SishuiSchool, ex:LoudongSchool
 - ex:schoolMemberOf (所属流派)
-- ex:practicedStyle (擅长艺术风格) - values: ex:QinHanSeals, ex:SealScript, ex:ClericalScript, ex:RunningScript, ex:RegularScript, ex:WeiSteleStyle, ex:StoneDrumScript
+- ex:practicedStyle (擅长艺术风格) - values: ex:QinHanSeals, ex:SealScript, ex:ClericalScript, ex:StoneDrumScript
 - ex:nativePlace (籍贯)
 - rdfs:label (名字标签字符串)
 
@@ -379,9 +379,6 @@ ${JSON.stringify(queryResult.rows, null, 2)}
   // Normalized translation between simple input name and graph ex: URI
   private getURIFromName(name: string): string {
     const lookups: Record<string, string> = {
-      '王羲之': 'ex:WangXizhi',
-      '颜真卿': 'ex:YanZhenqing',
-      '赵孟頫': 'ex:ZhaoMengfu',
       '文徵明': 'ex:WenZhengming',
       '文彭': 'ex:WenPeng',
       '何震': 'ex:HeZhen',
@@ -403,9 +400,6 @@ ${JSON.stringify(queryResult.rows, null, 2)}
     if (uri.startsWith('ex:')) {
       const labelShort = uri.substring(3);
       const decodes: Record<string, string> = {
-        'WangXizhi': '王羲之',
-        'YanZhenqing': '颜真卿',
-        'ZhaoMengfu': '赵孟頫',
         'WenZhengming': '文徵明',
         'WenPeng': '文彭',
         'HeZhen': '何震',
@@ -429,10 +423,6 @@ ${JSON.stringify(queryResult.rows, null, 2)}
         'QinHanSeals': '秦汉印风',
         'SealScript': '篆书',
         'ClericalScript': '隶书',
-        'RunningScript': '行书',
-        'CursiveScript': '草书',
-        'RegularScript': '楷书',
-        'WeiSteleStyle': '魏碑体',
         'StoneDrumScript': '石鼓文'
       };
       return decodes[labelShort] || labelShort;

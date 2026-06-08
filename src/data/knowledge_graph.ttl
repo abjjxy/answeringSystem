@@ -114,10 +114,6 @@ ex:introduction rdf:type rdf:Property ;
 ex:QinHanSeals rdf:type ex:ScriptStyle ; rdfs:label "秦汉印风" .
 ex:SealScript rdf:type ex:ScriptStyle ; rdfs:label "篆书" .
 ex:ClericalScript rdf:type ex:ScriptStyle ; rdfs:label "隶书" .
-ex:RunningScript rdf:type ex:ScriptStyle ; rdfs:label "行书" .
-ex:CursiveScript rdf:type ex:ScriptStyle ; rdfs:label "草书" .
-ex:RegularScript rdf:type ex:ScriptStyle ; rdfs:label "楷书" .
-ex:WeiSteleStyle rdf:type ex:ScriptStyle ; rdfs:label "魏碑体" .
 ex:StoneDrumScript rdf:type ex:ScriptStyle ; rdfs:label "石鼓文" .
 
 # ==========================================
@@ -145,49 +141,7 @@ ex:WanpaiSchool rdf:type ex:School ; rdfs:label "皖派 (邓派)" .
 # CHARACTERS (RDF TRIPLE DATA)
 # ==========================================
 
-# 1. 王羲之 (Wang Xizhi) - Standard Ancestor
-ex:WangXizhi rdf:type ex:Person ;
-    rdfs:label "王羲之" ;
-    ex:zi "逸少" ;
-    ex:hao "书圣" ;
-    ex:dynasty "东晋" ;
-    ex:birthYear 303 ;
-    ex:deathYear 361 ;
-    ex:nativePlace ex:Shaoxing ;
-    ex:practicedStyle ex:RunningScript , ex:CursiveScript , ex:RegularScript ;
-    ex:ctextId "105658" ;
-    ex:cbdbId "93427" ;
-    ex:introduction "王羲之，字逸少，世称'书圣'。东晋杰出书法家，琅琊临沂人，后迁会稽山阴。其书法飘逸、妍美，《兰亭集序》被誉为'天下第一行书'。他上承秦汉，下开魏晋南北朝之风气，为后世书家尊崇之万世师表。" .
-
-# 2. 颜真卿 (Yan Zhenqing) - Another Pillar
-ex:YanZhenqing rdf:type ex:Person ;
-    rdfs:label "颜真卿" ;
-    ex:zi "清臣" ;
-    ex:hao "鲁公" ;
-    ex:dynasty "唐" ;
-    ex:birthYear 709 ;
-    ex:deathYear 784 ;
-    ex:nativePlace ex:Shaoxing ; # 琅琊
-    ex:practicedStyle ex:RegularScript , ex:RunningScript ;
-    ex:ctextId "1002578" ;
-    ex:cbdbId "36181" ;
-    ex:introduction "颜真卿，字清臣，封鲁郡公，唐代中期名臣、杰出书法家。其楷书端庄雄伟，气势磅礴，开创'颜体'，与柳公权并称'颜柳'。代表作有《祭侄文稿》，笔势遒劲，悲愤激昂。" .
-
-# 3. 赵孟頫 (Zhao Mengfu)
-ex:ZhaoMengfu rdf:type ex:Person ;
-    rdfs:label "赵孟頫" ;
-    ex:zi "子昂" ;
-    ex:hao "松雪道人" ;
-    ex:dynasty "元" ;
-    ex:birthYear 1254 ;
-    ex:deathYear 1322 ;
-    ex:nativePlace ex:Hangzhou ;
-    ex:practicedStyle ex:RegularScript , ex:RunningScript , ex:SealScript ;
-    ex:ctextId "728343" ;
-    ex:cbdbId "18567" ;
-    ex:introduction "赵孟頫，字子昂，号松雪道人，宋室后裔。元代杰出书画家、书法理论家。他提倡复古，主张书法宗晋唐，其书体称为'赵体'，世称楷书四大家之一。在篆刻理论上，其《印学人》深刻启发了文彭等人。" .
-
-# 4. 文徵明 (Wen Zhengming) - Father of Wen Peng
+# 1. 文徵明 (Wen Zhengming) - Father of Wen Peng
 ex:WenZhengming rdf:type ex:Person ;
     rdfs:label "文徵明" ;
     ex:zi "征仲" ;
@@ -196,14 +150,14 @@ ex:WenZhengming rdf:type ex:Person ;
     ex:birthYear 1470 ;
     ex:deathYear 1559 ;
     ex:nativePlace ex:Suzhou ;
-    ex:practicedStyle ex:RunningScript , ex:RegularScript , ex:CursiveScript ;
+    ex:practicedStyle ex:SealScript , ex:ClericalScript ;
     ex:child ex:WenPeng ;
     ex:teacherOf ex:WenPeng ;
     ex:ctextId "728456" ;
     ex:cbdbId "19940" ;
     ex:introduction "文徵明，初字征明，更字征仲，号衡山居士。明代著名书法家、画家、文学家，'吴门四家'之一。诗书画无一不精，行书端雅，小楷极精。其子文彭深受其教，并开创了明清篆刻的新纪元。" .
 
-# 5. 文彭 (Wen Peng) - The core founder of modern seal engraving
+# 2. 文彭 (Wen Peng) - The core founder of modern seal engraving
 ex:WenPeng rdf:type ex:Person ;
     rdfs:label "文彭" ;
     ex:zi "寿承" ;
@@ -222,7 +176,7 @@ ex:WenPeng rdf:type ex:Person ;
     ex:cbdbId "34112" ;
     ex:introduction "文彭，字寿承，号三桥，文徵明长子。国子监博士。工书画，尤精印章，在南京偶然发现青田石（冻石），改用石材治印，从此文人纷纷親自动手刻印，彻底改变了以往文人写篆、工匠刊刻的局面，开创'吴门印派'，尊为'文人篆刻之祖'。" .
 
-# 6. 何震 (He Zhen) - Founder of Xueyu School
+# 3. 何震 (He Zhen) - Founder of Xueyu School
 ex:HeZhen rdf:type ex:Person ;
     rdfs:label "何震" ;
     ex:zi "主臣" ;
@@ -241,7 +195,7 @@ ex:HeZhen rdf:type ex:Person ;
     ex:cbdbId "41334" ;
     ex:introduction "何震，字主臣，号雪渔，徽州人。文彭入室弟子。其印风挺拔刚健，力矫文彭柔媚之弊，首创'急就章'刻法，浑厚苍劲。与文彭并称'文何'，其流派被称为'雪渔派'，为徽门印学之开山。" .
 
-# 7. 苏宣 (Su Xuan) - Sishui School Founder
+# 4. 苏宣 (Su Xuan) - Sishui School Founder
 ex:SuXuan rdf:type ex:Person ;
     rdfs:label "苏宣" ;
     ex:zi "尔宣" ;
@@ -259,7 +213,7 @@ ex:SuXuan rdf:type ex:Person ;
     ex:cbdbId "41355" ;
     ex:introduction "苏宣，字尔宣，号泗水。明代印章名家。他曾师从文彭与何震，遍读秦汉印玺，融汇文何精髓，创立'泗水印派'。他的章法苍劲稳重，开明代仿汉印之大成。" .
 
-# 8. 朱简 (Zhu Jian) - Scholar of Seal Art
+# 5. 朱简 (Zhu Jian) - Scholar of Seal Art
 ex:ZhuJian rdf:type ex:Person ;
     rdfs:label "朱简" ;
     ex:zi "修能" ;
@@ -275,7 +229,7 @@ ex:ZhuJian rdf:type ex:Person ;
     ex:cbdbId "41369" ;
     ex:introduction "朱简，字修能，号明绿山人，徽州人。他是篆刻史上的理论大家，撰写《印章要论》、《印书》，提出著名的'刀法论'。其刀法以碎刀、切刀见长，苍茫多姿，开辟了篆刻技术的新道路。" .
 
-# 9. 程邃 (Cheng Sui)
+# 6. 程邃 (Cheng Sui)
 ex:ChengSui rdf:type ex:Person ;
     rdfs:label "程邃" ;
     ex:zi "穆倩" ;
@@ -290,7 +244,7 @@ ex:ChengSui rdf:type ex:Person ;
     ex:cbdbId "50211" ;
     ex:introduction "程邃，字穆倩，号垢道人，诸生，安徽徽州人。清初著名篆刻家、书法家、画家。他遥承朱简刀法，善用干笔渴墨画山水，篆刻则纯用朱简冲切结合，印学以苍浑质朴、满白见长，世尊为徽派领袖。" .
 
-# 10. 汪关 (Wang Guan) - Loudong School
+# 7. 汪关 (Wang Guan) - Loudong School
 ex:WangGuan rdf:type ex:Person ;
     rdfs:label "汪关" ;
     ex:zi "东之" ;
@@ -306,7 +260,7 @@ ex:WangGuan rdf:type ex:Person ;
     ex:cbdbId "41380" ;
     ex:introduction "汪关，原名东阳，字东之，后改名关。因得汉代'汪关'私印，遂改名汪关。他避开何震过于猛厉之风，专精于汉印的平正沉茂，以冲刀精工见长，开创'娄东印派'，对后世工整一路影响深远。" .
 
-# 11. 丁敬 (Ding Jing) - Founder of Zhe School
+# 8. 丁敬 (Ding Jing) - Founder of Zhe School
 ex:DingJing rdf:type ex:Person ;
     rdfs:label "丁敬" ;
     ex:zi "敬身" ;
@@ -324,7 +278,7 @@ ex:DingJing rdf:type ex:Person ;
     ex:cbdbId "50392" ;
     ex:introduction "丁敬，字敬身，号砚林、两湖居士，浙江钱塘人。清代著名篆刻家、书法家，'西泠八家'之首，浙派印风之鼻祖。他汲取宋元印论并融合秦汉印精髓，独创碎刀涩刻之'切刀法'，开创了风靡百余年的'浙派/西泠印派'。" .
 
-# 12. 黄易 (Huang Yi) - Active Zhe School Master
+# 9. 黄易 (Huang Yi) - Active Zhe School Master
 ex:HuangYi rdf:type ex:Person ;
     rdfs:label "黄易" ;
     ex:zi "大易" ;
@@ -341,7 +295,7 @@ ex:HuangYi rdf:type ex:Person ;
     ex:cbdbId "50412" ;
     ex:introduction "黄易，字大易，号小松，丁敬杰出传人，'西泠八家'之一。他不仅工书画刻印，且致力于访碑，著有《小松访碑图》。其印风严谨，平正中见奇峭，对扩展浙派影响起到了极大的推动作用。" .
 
-# 13. 邓石如 (Deng Shiru) - Wanpai Master and Calligraphy Giant
+# 10. 邓石如 (Deng Shiru) - Wanpai Master and Calligraphy Giant
 ex:DengShiru rdf:type ex:Person ;
     rdfs:label "邓石如" ;
     ex:zi "顽伯" ;
@@ -358,7 +312,7 @@ ex:DengShiru rdf:type ex:Person ;
     ex:cbdbId "50450" ;
     ex:introduction "邓石如，字顽伯，号完白山人，安徽怀宁人。清代中期杰出书法家、篆刻家，'皖派'之祖。其书法篆、隶、真、行、草皆臻神妙，尤以篆书融汇隶书笔意（以隶笔写篆），冠绝清代。他主张'书从印入，印从书出'，打破了汉印局限，对近代书风、印学产生革命性颠覆。" .
 
-# 14. 吴熙载 (Wu Xizai) - Devoted student of Deng Shiru
+# 11. 吴熙载 (Wu Xizai) - Devoted student of Deng Shiru
 ex:WuXizai rdf:type ex:Person ;
     rdfs:label "吴熙载" ;
     ex:zi "让之" ;
@@ -374,7 +328,7 @@ ex:WuXizai rdf:type ex:Person ;
     ex:cbdbId "50490" ;
     ex:introduction "吴熙载，原名廷飏，字熙载，后以字行，改字让之，晚号晚学居士。他是邓石如的登堂入室弟子，忠实继承并发扬了邓石如'书从印入'的思想。其篆刻活泼流畅，刀法精妙神速，世称'让之印风'，把皖派艺术推向极致。" .
 
-# 15. 赵之谦 (Zhao Zhiqian) - Modern Pioneer of Stele Script & Seals
+# 12. 赵之谦 (Zhao Zhiqian) - Modern Pioneer of Stele Script & Seals
 ex:ZhaoZhiqian rdf:type ex:Person ;
     rdfs:label "赵之谦" ;
     ex:zi "益甫" ;
@@ -383,12 +337,12 @@ ex:ZhaoZhiqian rdf:type ex:Person ;
     ex:birthYear 1829 ;
     ex:deathYear 1884 ;
     ex:nativePlace ex:ShaoxingMin ;
-    ex:practicedStyle ex:WeiSteleStyle , ex:SealScript , ex:ClericalScript ;
+    ex:practicedStyle ex:SealScript , ex:ClericalScript ;
     ex:ctextId "728575" ;
     ex:cbdbId "50523" ;
     ex:introduction "赵之谦，字益甫，号悲盦，浙江绍兴人。晚清杰出书画家、篆刻家。他开创性地将魏碑体与隶篆书法结合，并提倡'印外求印'，将战国诏版、汉镜、钱币等多重文字形式融入篆刻，在艺术思想上，彻底冲破了由浙派、皖派主导的藩篱。" .
 
-# 16. 吴昌硕 (Wu Changshuo) - The Grandmaster of Stone Drum calligraphy
+# 13. 吴昌硕 (Wu Changshuo) - The Grandmaster of Stone Drum calligraphy
 ex:WuChangshuo rdf:type ex:Person ;
     rdfs:label "吴昌硕" ;
     ex:zi "俊卿" ;

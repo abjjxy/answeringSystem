@@ -56,6 +56,44 @@ export interface ShortestPathResult {
 export interface GraphAnalysisOutput {
   centralities: CentralityScore[];
   communities: CommunityGroup[];
+  schools?: SchoolAnalysisResult;
+}
+
+export interface SchoolFigure {
+  id: string;
+  label: string;
+  role: '开创者' | '核心人物' | '成员';
+  dynasty?: string;
+}
+
+export interface SchoolAnalysis {
+  schoolId: string;
+  schoolLabel: string;
+  founder?: SchoolFigure;
+  coreFigures: SchoolFigure[];
+  memberCount: number;
+  members: SchoolFigure[];
+  period: string;
+}
+
+export interface SchoolBridge {
+  personA: string;
+  personB: string;
+  schoolA: string;
+  schoolB: string;
+  relation: string;
+}
+
+export interface SchoolEvolution {
+  era: string;
+  schools: string[];
+  note: string;
+}
+
+export interface SchoolAnalysisResult {
+  schools: SchoolAnalysis[];
+  bridges: SchoolBridge[];
+  evolution: SchoolEvolution[];
 }
 
 // ctext and CBDB alignment types

@@ -1,16 +1,13 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
-import NetworkGraph from './components/NetworkGraph.vue';
+import TopologyPanel from './components/TopologyPanel.vue';
 import ChatPanel from './components/ChatPanel.vue';
 import type { GraphData, GraphNode, ChatMessage } from './types';
-import { 
-  Sparkles, 
-  Feather, 
-  Clock 
-} from 'lucide-vue-next';
+import { Feather, Clock, Database } from 'lucide-vue-next';
 
 const graphData = ref<GraphData>({ nodes: [], links: [] });
 const selectedNode = ref<GraphNode | null>(null);
+const topologyTab = ref<'graph' | 'analysis'>('graph');
 const messages = ref<ChatMessage[]>([]);
 const loading = ref(false);
 
@@ -121,15 +118,16 @@ const handleSendMessage = async (text: string) => {
       <!-- LEFT COLUMN: INTERACTIVE GRAPH CANVAS (5 cols) -->
       <div class="lg:col-span-5 flex flex-col gap-4 h-full min-h-[460px]">
         <div class="flex-1 h-full">
-          <NetworkGraph 
-            :data="graphData" 
-            @select-node="selectNode" 
-            :selected-node="selectedNode" 
+          <TopologyPanel
+            v-model:active-tab="topologyTab"
+            :data="graphData"
+            :selected-node="selectedNode"
+            @select-node="selectNode"
           />
         </div>
 
-        <!-- Selected Node Details Cabinet under graph -->
-        <div v-if="selectedNode" class="p-4 bg-white border border-[#E9E4DC] rounded-xl shadow-xs space-y-3 font-serif animate-fade-in">
+        <!-- Selected Node Details (graph tab only) -->
+        <div v-if="selectedNode && topologyTab === 'graph'" class="p-4 bg-white border border-[#E9E4DC] rounded-xl shadow-xs space-y-3 font-serif animate-fade-in">
           <div class="border-b border-gray-100 pb-1.5 flex items-center justify-between">
             <div>
               <h3 class="text-base font-bold text-[#2D241E]">{{ selectedNode.label }}</h3>

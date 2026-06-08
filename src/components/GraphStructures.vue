@@ -1,45 +1,96 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
-import { Award, ShieldAlert, Footprints, Network, Cpu, ArrowRight } from 'lucide-vue-next';
-import type { CentralityScore, CommunityGroup, ShortestPathResult } from '../types';
+import { ref, onMounted, computed } from 'vue';
+import {
+  Award,
+  Footprints,
+  Users,
+  GitBranch,
+  ArrowRight,
+  ShieldAlert,
+  Crown,
+  Link2,
+  Clock,
+} from 'lucide-vue-next';
+import type {
+  CentralityScore,
+  CommunityGroup,
+  ShortestPathResult,
+  SchoolAnalysisResult,
+  GraphNode,
+} from '../types';
 
-const stats = ref<{ centralities: CentralityScore[]; communities: CommunityGroup[] } | null>(null);
+interface Props {
+  selectedNode?: GraphNode | null;
+}
+
+const props = defineProps<Props>();
+
+type AnalysisTab = 'schools' | 'communities' | 'centrality' | 'paths';
+
+const activeSection = ref<AnalysisTab>('schools');
 const loading = ref(false);
+
+const centralities = ref<CentralityScore[]>([]);
+const communities = ref<CommunityGroup[]>([]);
+const schools = ref<SchoolAnalysisResult | null>(null);
 
 const sourcePerson = ref('ex:WenPeng');
 const targetPerson = ref('ex:WuChangshuo');
 const pathResult = ref<ShortestPathResult | null>(null);
 const pathLoading = ref(false);
 
-const queryOptions = [
-  { value: 'ex:WangXizhi', label: '王羲之 (书圣)' },
-  { value: 'ex:YanZhenqing', label: '颜真卿' },
-  { value: 'ex:ZhaoMengfu', label: '赵孟頫' },
-  { value: 'ex:WenZhengming', label: '文徵明' },
-  { value: 'ex:WenPeng', label: '文彭' },
-  { value: 'ex:HeZhen', label: '何震' },
-  { value: 'ex:ZhuJian', label: '朱简' },
-  { value: 'ex:DingJing', label: '丁敬 (浙派鼻祖)' },
-  { value: 'ex:DengShiru', label: '邓石如 (完白山人)' },
-  { value: 'ex:WuXizai', label: '吴熙载 (让之)' },
-  { value: 'ex:ZhaoZhiqian', label: '赵之谦' },
-  { value: 'ex:WuChangshuo', label: '吴昌硕 (缶老)' },
+const sections = [
+  { id: 'schools' as const, label: '流派分析', icon: GitBranch },
+  { id: 'communities' as const, label: '社区发现', icon: Users },
+  { id: 'centrality' as const, label: '中心性', icon: Award },
+  { id: 'paths' as const, label: '路径分析', icon: Footprints },
 ];
+
+const personCentralities = computed(() =>
+  centralities.value.filter(c => c.type === 'Person')
+);
+
+const queryOptions = computed(() => {
+  const fromGraph = personCentralities.value.map(c => ({ value: c.id, label: c.label }));
+  if (fromGraph.length > 0) return fromGraph;
+  return [
+    { value: 'ex:WenZhengming', label: '文徵明' },
+    { value: 'ex:WenPeng', label: '文彭' },
+    { value: 'ex:HeZhen', label: '何震' },
+    { value: 'ex:DingJing', label: '丁敬' },
+    { value: 'ex:DengShiru', label: '邓石如' },
+    { value: 'ex:WuChangshuo', label: '吴昌硕' },
+  ];
+});
+
+const topCentralities = computed(() =>
+  [...personCentralities.value]
+    .sort((a, b) => b.betweennessCentrality - a.betweennessCentrality || b.degreeCentrality - a.degreeCentrality)
+    .slice(0, 8)
+);
+
+const maxDegree = computed(() => Math.max(...topCentralities.value.map(c => c.degreeCentrality), 1));
+const maxBetween = computed(() => Math.max(...topCentralities.value.map(c => c.betweennessCentrality), 1));
 
 const fetchStats = async () => {
   loading.value = true;
   try {
     const res = await fetch('/api/stats');
     const data = await res.json();
-    stats.value = data;
+    centralities.value = data.centralities || [];
+    communities.value = data.communities || [];
+    schools.value = data.schools || null;
   } catch (err) {
-    console.error('Failed to resolve network stats:', err);
+    console.error('Failed to load graph analysis:', err);
   } finally {
     loading.value = false;
   }
 };
 
 onMounted(() => {
+  if (props.selectedNode?.id) {
+    sourcePerson.value = props.selectedNode.id;
+  }
   fetchStats();
 });
 
@@ -49,162 +100,268 @@ const handleTracePath = async () => {
     const response = await fetch('/api/path', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ source: sourcePerson.value, target: targetPerson.value })
+      body: JSON.stringify({ source: sourcePerson.value, target: targetPerson.value }),
     });
-    const data = await response.json();
-    pathResult.value = data;
+    pathResult.value = await response.json();
   } catch (err) {
-    console.error('Failed to trace network path:', err);
+    console.error('Failed to trace path:', err);
   } finally {
     pathLoading.value = false;
   }
 };
+
+const roleLabel = (c: CentralityScore) => {
+  if (c.betweennessCentrality >= maxBetween.value * 0.6) return '枢纽人物';
+  if (c.degreeCentrality >= maxDegree.value * 0.6) return '高连接节点';
+  return '网络成员';
+};
 </script>
 
 <template>
-  <div class="bg-[#FCFAF7] border border-[#E9E4DC] rounded-xl p-5 shadow-sm space-y-5" id="graph_structures">
-    <div>
-      <h2 class="font-serif font-bold text-lg text-[#2D241E] flex items-center gap-2">
-        <Network class="w-5 h-5 text-[#8C2D19]" />
-        <span>金石学者图论及多维结构计算中心</span>
-      </h2>
-      <p class="text-xs text-gray-500 mt-1">
-        本舱室应用图论算理研究《印人传》之人物网络。包含：基于最短路径的师承交游拓扑、度与介数中心性（Betweenness Centrality）权威权重计算、以及各流派社区演变发现。
+  <div class="h-full flex flex-col overflow-hidden" id="graph_structures">
+    <div class="px-4 py-2 border-b border-[#E9E4DC] bg-white shrink-0">
+      <p class="text-[11px] text-gray-500 leading-relaxed">
+        基于人物关系图谱的图论分析：流派核心与演变、师承交游社区、中心性指标与最短路径探索。
       </p>
     </div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
-      <!-- Shortest Path workspace -->
-      <div class="border border-[#E9E4DC] rounded-lg p-4 bg-white space-y-4 font-serif">
-        <h3 class="text-sm font-bold text-[#8C2D19] border-b pb-2 flex items-center gap-1.5 font-sans">
-          <Footprints class="w-4 h-4 text-[#8C2D19]" />
-          <span>师承金石脉络探幽 (Shortest Relationship Paths)</span>
-        </h3>
+    <div class="flex border-b border-[#E9E4DC] bg-[#FAF8F5] shrink-0 overflow-x-auto">
+      <button
+        v-for="sec in sections"
+        :key="sec.id"
+        type="button"
+        @click="activeSection = sec.id"
+        :class="[
+          'flex items-center gap-1.5 px-4 py-2.5 text-xs font-medium whitespace-nowrap border-b-2 transition-colors cursor-pointer',
+          activeSection === sec.id
+            ? 'border-[#8C2D19] text-[#8C2D19] bg-white'
+            : 'border-transparent text-[#998D80] hover:text-[#2D241E]'
+        ]"
+      >
+        <component :is="sec.icon" class="w-3.5 h-3.5" />
+        {{ sec.label }}
+      </button>
+    </div>
 
-        <div class="grid grid-cols-2 gap-3 text-xs font-sans">
-          <div>
-            <label class="block text-gray-500 mb-1">寻路起点（贤家甲）</label>
-            <select
-              v-model="sourcePerson"
-              class="w-full p-2 bg-stone-50 border rounded-md text-[#2D241E] focus:outline-none focus:border-[#8C2D19]"
-            >
-              <option v-for="opt in queryOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
-            </select>
-          </div>
-          <div>
-            <label class="block text-gray-500 mb-1">寻路终点（贤家乙）</label>
-            <select
-              v-model="targetPerson"
-              class="w-full p-2 bg-stone-50 border rounded-md text-[#2D241E] focus:outline-none focus:border-[#8C2D19]"
-              id="target_selector"
-            >
-              <option v-for="opt in queryOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
-            </select>
+    <div class="flex-1 overflow-y-auto p-4 space-y-4 bg-[#FCFAF7]">
+      <div v-if="loading" class="text-center py-12 text-xs text-gray-400">正在计算图结构指标…</div>
+
+      <!-- 流派分析 -->
+      <template v-else-if="activeSection === 'schools' && schools">
+        <div class="grid grid-cols-1 gap-3">
+          <div
+            v-for="school in schools.schools"
+            :key="school.schoolId"
+            class="bg-white border border-[#E9E4DC] rounded-lg p-4 space-y-3"
+          >
+            <div class="flex items-start justify-between gap-2">
+              <div>
+                <h3 class="font-serif font-bold text-[#2D241E]">{{ school.schoolLabel }}</h3>
+                <p class="text-[10px] text-gray-500 mt-0.5 flex items-center gap-1">
+                  <Clock class="w-3 h-3" />
+                  活跃时期：{{ school.period }} · {{ school.memberCount }} 人
+                </p>
+              </div>
+              <span
+                v-if="school.founder"
+                class="shrink-0 text-[10px] px-2 py-1 bg-[#8C2D19]/10 text-[#8C2D19] rounded-full font-medium flex items-center gap-1"
+              >
+                <Crown class="w-3 h-3" />
+                开创：{{ school.founder.label }}
+              </span>
+            </div>
+
+            <div v-if="school.coreFigures.length" class="space-y-1">
+              <div class="text-[10px] text-gray-500 font-medium">核心人物</div>
+              <div class="flex flex-wrap gap-1.5">
+                <span
+                  v-for="fig in school.coreFigures"
+                  :key="fig.id"
+                  class="text-[10.5px] bg-[#F4EFE6] text-[#5C5246] px-2 py-0.5 rounded border border-[#E9E4DC]"
+                >
+                  {{ fig.label }}
+                  <span v-if="fig.dynasty" class="text-gray-400">（{{ fig.dynasty }}）</span>
+                </span>
+              </div>
+            </div>
+
+            <div class="flex flex-wrap gap-1">
+              <span
+                v-for="m in school.members"
+                :key="m.id"
+                class="text-[10px] bg-white border border-[#E9E4DC] text-[#5C5246] px-1.5 py-0.5 rounded"
+              >
+                {{ m.label }}
+              </span>
+            </div>
           </div>
         </div>
 
-        <button
-          @click="handleTracePath"
-          :disabled="pathLoading"
-          class="w-full py-2.5 bg-[#8C2D19] hover:bg-[#6E2213] text-white text-xs font-sans font-medium rounded-lg shadow-sm transition-colors cursor-pointer"
-          id="btn_trace_path"
-        >
-          {{ pathLoading ? '图论矩阵求解中...' : '求解并绘制最短传承路径' }}
-        </button>
-
-        <!-- Path Trace Draw results -->
-        <div v-if="pathResult" class="p-3.5 bg-[#FAF8F5] border border-[#E9E4DC] rounded-lg space-y-3 font-sans" id="path_trace_results">
-          <template v-if="pathResult.found">
-            <div class="text-xs text-gray-500 flex items-center justify-between">
-              <span>寻路成功 (Path Discovered)</span>
-              <span class="text-[#8C2D19] font-bold">跳数：{{ pathResult.edges.length }} 跳</span>
+        <div v-if="schools.bridges.length" class="bg-white border border-[#E9E4DC] rounded-lg p-4 space-y-3 mt-1">
+          <h3 class="text-sm font-bold text-[#2D241E] flex items-center gap-1.5">
+            <Link2 class="w-4 h-4 text-[#8C2D19]" />
+            流派间关联
+          </h3>
+          <div class="space-y-2">
+            <div
+              v-for="(bridge, i) in schools.bridges"
+              :key="i"
+              class="text-xs flex flex-wrap items-center gap-1.5 p-2.5 bg-[#FAF8F5] rounded-lg border border-[#E9E4DC]/60"
+            >
+              <span class="font-serif font-bold text-[#2D241E]">{{ bridge.personA }}</span>
+              <span class="text-[10px] text-gray-400">（{{ bridge.schoolA }}）</span>
+              <span class="text-[#8C2D19] text-[10px] px-1.5 py-0.5 bg-white rounded border border-[#E9E4DC]">
+                {{ bridge.relation }}
+              </span>
+              <span class="font-serif font-bold text-[#2D241E]">{{ bridge.personB }}</span>
+              <span class="text-[10px] text-gray-400">（{{ bridge.schoolB }}）</span>
             </div>
-            <!-- node to node visual lines -->
-            <div class="flex flex-col gap-2">
-              <template v-for="(node, i) in pathResult.path" :key="i">
-                <div class="flex items-center gap-2">
-                  <span class="w-5 h-5 rounded-full bg-[#8C2D19]/10 text-[#8C2D19] text-[10px] font-bold flex items-center justify-center border border-[#8C2D19]/20 font-serif">
-                    {{ i + 1 }}
-                  </span>
-                  <span class="font-serif font-bold text-sm text-[#2D241E]">{{ node }}</span>
-                </div>
-                <div v-if="i < pathResult.path.length - 1" class="pl-2.5 py-0.5 border-l border-dashed border-[#8C2D19] ml-2.5 flex items-center gap-1.5 text-[10px] text-[#8C2D19] font-medium leading-none.5">
-                  <ArrowRight class="w-3 h-3 shrink-0" />
-                  <span>传承连结: {{ pathResult.edges[i]?.relation || '交游' }}</span>
-                </div>
-              </template>
-            </div>
-          </template>
-          <div v-else class="text-xs text-rose-600 font-medium py-2 flex items-center gap-1.5">
-            <ShieldAlert class="w-4 h-4" />
-            <span>在此二人之间暂无可见的师承或交游路线直接连通。图谱外亦无直接链条。</span>
           </div>
         </div>
-      </div>
+      </template>
 
-      <!-- Centrality ranking board -->
-      <div class="border border-[#E9E4DC] rounded-lg p-4 bg-white space-y-4">
-        <h3 class="text-sm font-bold text-[#8C2D19] border-b pb-2 flex items-center gap-1.5 font-sans">
-          <Award class="w-4 h-4 text-[#8C2D19]" />
-          <span>贤人图论影响力权值榜单 (Centrality Metric Rankings)</span>
-        </h3>
+      <!-- 社区发现 -->
+      <template v-else-if="activeSection === 'communities'">
+        <p class="text-[11px] text-gray-500 -mt-1">
+          基于师承、交游与流派归属关系，将印人划分为相互关联的人物群体。
+        </p>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div
+            v-for="comm in communities"
+            :key="comm.communityId"
+            class="bg-white border border-[#E9E4DC] rounded-lg p-3.5 space-y-2.5"
+          >
+            <div class="flex items-center justify-between">
+              <span class="text-sm font-serif font-bold text-[#8C2D19]">{{ comm.leader }}</span>
+              <span class="text-[10px] text-gray-500">{{ comm.members.length }} 人</span>
+            </div>
+            <div class="flex flex-wrap gap-1">
+              <span
+                v-for="member in comm.members"
+                :key="member.id"
+                class="text-[10.5px] bg-[#FAF8F5] border border-[#E9E4DC] text-[#5C5246] px-2 py-0.5 rounded"
+              >
+                {{ member.label }}
+              </span>
+            </div>
+          </div>
+        </div>
+      </template>
 
-        <div class="overflow-x-auto" id="centrality_board_holder">
-          <div v-if="loading" class="text-center py-6 text-xs text-gray-400">正在计算拉普拉斯矩阵值...</div>
-          <table v-else-if="stats" class="min-w-full divide-y divide-gray-100 text-xs">
+      <!-- 中心性分析 -->
+      <template v-else-if="activeSection === 'centrality'">
+        <p class="text-[11px] text-gray-500 -mt-1">
+          度中心性衡量直接关联数量；介数中心性衡量人物作为传承桥梁的频率。
+        </p>
+        <div class="bg-white border border-[#E9E4DC] rounded-lg overflow-hidden">
+          <table class="w-full text-xs">
             <thead>
-              <tr class="text-[#998D80] text-left text-[10px] font-bold tracking-wider uppercase bg-[#FAF8F5]">
-                <th class="px-3 py-1.5">人物名称</th>
-                <th class="px-3 py-1.5 text-center">度中心性 (Degree)</th>
-                <th class="px-3 py-1.5 text-center">介数中心性 (Betweenness)</th>
-                <th class="px-3 py-1.5">分析判定</th>
+              <tr class="bg-[#FAF8F5] text-[#998D80] text-left text-[10px]">
+                <th class="px-3 py-2 font-medium">人物</th>
+                <th class="px-3 py-2 font-medium text-center w-24">度中心性</th>
+                <th class="px-3 py-2 font-medium text-center w-24">介数中心性</th>
+                <th class="px-3 py-2 font-medium w-20">角色</th>
               </tr>
             </thead>
-            <tbody class="divide-y divide-stone-50 text-gray-700">
-              <tr v-for="(c, i) in stats.centralities.slice(0, 7)" :key="i" class="hover:bg-amber-50/20 transition-colors">
-                <td class="px-3 py-2 font-serif font-bold text-[#2D241E]">{{ c.label }}</td>
-                <td class="px-3 py-2 text-center font-mono font-medium">{{ c.degreeCentrality }}</td>
-                <td class="px-3 py-2 text-center font-mono font-bold text-[#8C2D19]">{{ c.betweennessCentrality }}</td>
-                <td class="px-3 py-2 text-stone-500 scale-95 origin-left text-[10px]">
-                  {{ c.betweennessCentrality > 10 ? '核心枢纽 (Bridge)' : c.degreeCentrality >= 5 ? '高度集权 (Hub)' : '专业叶节点' }}
+            <tbody class="divide-y divide-stone-100">
+              <tr v-for="c in topCentralities" :key="c.id" class="hover:bg-amber-50/30">
+                <td class="px-3 py-2.5 font-serif font-bold text-[#2D241E]">{{ c.label }}</td>
+                <td class="px-3 py-2.5">
+                  <div class="flex items-center gap-2 justify-center">
+                    <div class="w-12 h-1.5 bg-stone-100 rounded-full overflow-hidden">
+                      <div
+                        class="h-full bg-[#412C1E] rounded-full"
+                        :style="{ width: `${(c.degreeCentrality / maxDegree) * 100}%` }"
+                      />
+                    </div>
+                    <span class="font-mono text-[10px] w-4 text-right">{{ c.degreeCentrality }}</span>
+                  </div>
                 </td>
+                <td class="px-3 py-2.5">
+                  <div class="flex items-center gap-2 justify-center">
+                    <div class="w-12 h-1.5 bg-stone-100 rounded-full overflow-hidden">
+                      <div
+                        class="h-full bg-[#8C2D19] rounded-full"
+                        :style="{ width: `${(c.betweennessCentrality / maxBetween) * 100}%` }"
+                      />
+                    </div>
+                    <span class="font-mono text-[10px] w-6 text-right text-[#8C2D19]">{{ c.betweennessCentrality }}</span>
+                  </div>
+                </td>
+                <td class="px-3 py-2.5 text-[10px] text-gray-500">{{ roleLabel(c) }}</td>
               </tr>
             </tbody>
           </table>
         </div>
-        <div class="text-[10px] text-gray-400 font-sans leading-relaxed pt-1.5 border-t border-gray-100">
-          * <strong>介数中心性 (Betweenness Centrality)</strong> 计算：衡量每个人处于所有最短金石传承链条中间人的概率，值越高说明该节点作为中介传承起到了承前启后、跨流派汇通的作用。如<strong>文彭</strong>及<strong>丁敬</strong>其介数极高，验证其文人印学宗师之卓越地位。
-        </div>
-      </div>
-    </div>
+      </template>
 
-    <!-- Community cluster rows -->
-    <div class="border border-[#E9E4DC] rounded-lg p-4 bg-white space-y-3">
-      <h3 class="text-sm font-bold text-[#8C2D19] border-b pb-2 flex items-center gap-1.5">
-        <Cpu class="w-4 h-4 text-[#8C2D19]" />
-        <span>传承流派划分社区 (Aesthetic School Modular Communities)</span>
-      </h3>
-
-      <div v-if="loading" class="text-center py-4 text-xs text-gray-400">正在发掘社交圈...</div>
-      <div v-else-if="stats" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="community_rows_grid">
-        <div v-for="comm in stats.communities" :key="comm.communityId" class="border border-[#FAF6F0] rounded-lg bg-[#FAF8F5] p-3 space-y-2">
-          <div class="flex items-center justify-between">
-            <span class="text-xs font-serif font-bold text-[#2D241E]">{{ comm.leader }}</span>
-            <span class="text-[9px] px-2 py-0.5 bg-stone-250 text-gray-600 rounded-full font-bold">
-              {{ comm.members.length }} 位贤哲
-            </span>
+      <!-- 路径分析 -->
+      <template v-else-if="activeSection === 'paths'">
+        <p class="text-[11px] text-gray-500 -mt-1">
+          在师承与交游关系网络中，探索两位印人之间的最短传承或交往路径。
+        </p>
+        <div class="bg-white border border-[#E9E4DC] rounded-lg p-4 space-y-4">
+          <div class="grid grid-cols-2 gap-3 text-xs">
+            <div>
+              <label class="block text-gray-500 mb-1">起点人物</label>
+              <select
+                v-model="sourcePerson"
+                class="w-full p-2 bg-stone-50 border border-[#E9E4DC] rounded-md text-[#2D241E] focus:outline-none focus:border-[#8C2D19]"
+              >
+                <option v-for="opt in queryOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-gray-500 mb-1">终点人物</label>
+              <select
+                v-model="targetPerson"
+                class="w-full p-2 bg-stone-50 border border-[#E9E4DC] rounded-md text-[#2D241E] focus:outline-none focus:border-[#8C2D19]"
+              >
+                <option v-for="opt in queryOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
+              </select>
+            </div>
           </div>
-          <div class="flex flex-wrap gap-1">
-            <span
-              v-for="member in comm.members"
-              :key="member.id"
-              class="text-[10.5px] bg-white border border-[#E9E4DC] text-[#5C5246] px-2 py-0.5 rounded font-medium"
-            >
-              {{ member.label }}
-            </span>
+
+          <button
+            type="button"
+            @click="handleTracePath"
+            :disabled="pathLoading"
+            class="w-full py-2.5 bg-[#8C2D19] hover:bg-[#6E2213] disabled:opacity-60 text-white text-xs font-medium rounded-lg transition-colors cursor-pointer"
+          >
+            {{ pathLoading ? '计算中…' : '探索最短路径' }}
+          </button>
+
+          <div v-if="pathResult" class="p-3.5 bg-[#FAF8F5] border border-[#E9E4DC] rounded-lg space-y-2">
+            <template v-if="pathResult.found">
+              <div class="text-xs text-gray-500 flex justify-between">
+                <span>路径已找到</span>
+                <span class="text-[#8C2D19] font-bold">{{ pathResult.edges.length }} 跳</span>
+              </div>
+              <div class="flex flex-col gap-1.5">
+                <template v-for="(node, i) in pathResult.path" :key="i">
+                  <div class="flex items-center gap-2">
+                    <span class="w-5 h-5 rounded-full bg-[#8C2D19]/10 text-[#8C2D19] text-[10px] font-bold flex items-center justify-center border border-[#8C2D19]/20">
+                      {{ i + 1 }}
+                    </span>
+                    <span class="font-serif font-bold text-sm text-[#2D241E]">{{ node }}</span>
+                  </div>
+                  <div
+                    v-if="i < pathResult.path.length - 1"
+                    class="pl-2.5 py-0.5 border-l border-dashed border-[#8C2D19] ml-2.5 flex items-center gap-1 text-[10px] text-[#8C2D19]"
+                  >
+                    <ArrowRight class="w-3 h-3" />
+                    {{ pathResult.edges[i]?.relation || '关联' }}
+                  </div>
+                </template>
+              </div>
+            </template>
+            <div v-else class="text-xs text-rose-600 flex items-center gap-1.5">
+              <ShieldAlert class="w-4 h-4 shrink-0" />
+              两人之间暂无师承或交游路径连通。
+            </div>
           </div>
         </div>
-      </div>
+      </template>
     </div>
   </div>
 </template>

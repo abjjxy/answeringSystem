@@ -2,7 +2,7 @@
 import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue';
 import * as d3 from 'd3';
 import type { GraphData, GraphNode } from '../types';
-import { Filter, ZoomIn, ZoomOut, RotateCcw } from 'lucide-vue-next';
+import { ZoomIn, ZoomOut, RotateCcw } from 'lucide-vue-next';
 
 interface Props {
   data: GraphData;
@@ -17,19 +17,33 @@ const emit = defineEmits<{
 const containerRef = ref<HTMLDivElement | null>(null);
 const svgRef = ref<SVGSVGElement | null>(null);
 
+type ViewMode = 'person' | 'school';
+
+const viewMode = ref<ViewMode>('person');
+
 const showRelations = ref({
   family: true,
   mentorship: true,
   friendship: true,
-  school: true,
-  style: true,
-  native: true,
+  school: false,
+  style: false,
+  native: false,
 });
+
+const applyViewMode = (mode: ViewMode) => {
+  viewMode.value = mode;
+  if (mode === 'person') {
+    showRelations.value = { family: true, mentorship: true, friendship: true, school: false, style: false, native: false };
+  } else {
+    showRelations.value = { family: false, mentorship: true, friendship: false, school: true, style: false, native: false };
+  }
+};
 
 const hoveredNode = ref<GraphNode | null>(null);
 const highlightNeighborhood = ref<Set<string>>(new Set());
 const dimensions = ref({ width: 600, height: 500 });
 const zoomBehaviorRef = ref<any>(null);
+const currentTransform = ref<any>(d3.zoomIdentity); // 保存缩放状态
 
 // Handle graph filtering
 const filteredLinks = computed(() => {
@@ -45,7 +59,6 @@ const filteredLinks = computed(() => {
   });
 });
 
-// Extract unique nodes and build filtered nodes list
 const filteredNodes = computed(() => {
   const activeNodeIds = new Set<string>();
   filteredLinks.value.forEach(l => {
@@ -54,8 +67,10 @@ const filteredNodes = computed(() => {
   });
 
   return props.data.nodes.filter(n => {
-    if (n.type === 'Person') return true;
-    return activeNodeIds.has(n.id);
+    if (viewMode.value === 'person') return n.type === 'Person' && activeNodeIds.has(n.id);
+    if (n.type === 'Person') return activeNodeIds.has(n.id);
+    if (n.type === 'School') return activeNodeIds.has(n.id);
+    return false;
   });
 });
 
@@ -109,6 +124,14 @@ const renderSimulation = () => {
   const height = dimensions.value.height;
 
   const svg = d3.select(svgRef.value);
+  
+  // 保存当前缩放状态
+  const currentGroupTransform = svg.select('g.graph-content');
+  if (!currentGroupTransform.empty()) {
+    const transform = d3.zoomTransform(svg.node() as any);
+    currentTransform.value = transform;
+  }
+  
   svg.selectAll('*').remove(); // Flush previous canvas
 
   // Group element for zoom pan
@@ -123,19 +146,36 @@ const renderSimulation = () => {
 
   zoomBehaviorRef.value = zoom;
   svg.call(zoom as any);
+  
+  // 恢复之前保存的缩放状态
+  svg.call(zoom.transform as any, currentTransform.value);
 
-  // Deep clones to prevent simulation side-effects
-  const simNodes = filteredNodes.value.map(n => ({ ...n }));
-  const simLinks = filteredLinks.value.map(l => {
+
+  const linkPairKey = (s: string, t: string) => [s, t].sort().join('|');
+  const pairLinkMap = new Map<string, { source: string; target: string; relations: string[]; relationLabels: string[] }>();
+
+  filteredLinks.value.forEach(l => {
     const sId = typeof l.source === 'string' ? l.source : (l.source as any).id;
     const tId = typeof l.target === 'string' ? l.target : (l.target as any).id;
-    return {
-      source: sId,
-      target: tId,
-      relation: l.relation,
-      relationLabel: l.relationLabel
-    };
+    const pairKey = linkPairKey(sId, tId);
+    let entry = pairLinkMap.get(pairKey);
+    if (!entry) {
+      entry = { source: sId, target: tId, relations: [], relationLabels: [] };
+      pairLinkMap.set(pairKey, entry);
+    }
+    if (!entry.relations.includes(l.relation)) entry.relations.push(l.relation);
+    if (!entry.relationLabels.includes(l.relationLabel)) entry.relationLabels.push(l.relationLabel);
   });
+
+  // Deep clones to prevent simulation side-effects; merge parallel edges into one label (e.g. 师从-交游)
+  const simNodes = filteredNodes.value.map(n => ({ ...n }));
+  const simLinks = Array.from(pairLinkMap.values()).map(e => ({
+    source: e.source,
+    target: e.target,
+    relation: e.relations[0],
+    relations: e.relations,
+    relationLabel: e.relationLabels.join('-'),
+  }));
 
   // Custom coloring maps
   const nodeColor = (node: any) => {
@@ -172,18 +212,14 @@ const renderSimulation = () => {
   // Create force physics simulation
   const simulation = d3.forceSimulation(simNodes as any)
     .force('link', d3.forceLink(simLinks).id((d: any) => d.id).distance((link: any) => {
-      // Heavily shared categorical hubs (styles, places, schools) require much longer connections to prevent overlap
-      if (link.relation === 'ex:nativePlace' || link.relation === 'ex:practicedStyle') {
-        return 230;
-      }
-      if (link.relation === 'ex:schoolMemberOf' || link.relation === 'ex:founderOf') {
-        return 190;
-      }
-      return 160;
+      const rels: string[] = link.relations ?? [link.relation];
+      if (rels.some(r => r === 'ex:nativePlace' || r === 'ex:practicedStyle')) return 200;
+      if (rels.some(r => r === 'ex:schoolMemberOf' || r === 'ex:founderOf')) return 140;
+      return viewMode.value === 'person' ? 110 : 150;
     }))
-    .force('charge', d3.forceManyBody().strength(-950))
+    .force('charge', d3.forceManyBody().strength(viewMode.value === 'person' ? -420 : -750))
     .force('center', d3.forceCenter(width / 2, height / 2))
-    .force('collision', d3.forceCollide().radius((d: any) => nodeSize(d.type) + 45));
+    .force('collision', d3.forceCollide().radius((d: any) => nodeSize(d.type) + (viewMode.value === 'person' ? 28 : 40)));
 
   activeSimulation = simulation;
 
@@ -209,28 +245,40 @@ const renderSimulation = () => {
     .data(simLinks)
     .enter().append('g');
 
+  const linkEndpointId = (endpoint: string | { id: string }) =>
+    typeof endpoint === 'string' ? endpoint : endpoint.id;
+
   const paths = linkElements.append('line')
     .attr('stroke', '#E0DCD5')
     .attr('stroke-width', (d: any) => {
+      const s = linkEndpointId(d.source);
+      const t = linkEndpointId(d.target);
       const isFocus = highlightNeighborhood.value.size === 0 ||
-        (highlightNeighborhood.value.has(d.source) && highlightNeighborhood.value.has(d.target));
+        (highlightNeighborhood.value.has(s) && highlightNeighborhood.value.has(t));
       return isFocus ? 1.5 : 0.6;
     })
     .attr('stroke-dasharray', (d: any) => {
-      if (d.relation === 'ex:nativePlace' || d.relation === 'ex:practicedStyle') return '3,3';
+      const rels: string[] = d.relations ?? [d.relation];
+      if (rels.some(r => r === 'ex:nativePlace' || r === 'ex:practicedStyle')) return '3,3';
       return 'none';
     })
     .attr('marker-end', 'url(#arrow)');
 
+  const showAllLabels = viewMode.value !== 'person';
   const linkLabels = linkElements.append('text')
     .attr('font-size', '8px')
     .attr('fill', '#998D80')
     .attr('text-anchor', 'middle')
     .attr('opacity', (d: any) => {
-      if (highlightNeighborhood.value.size === 0) return 0.45;
-      // Fade out labels on non-focus paths
-      const isFocus = highlightNeighborhood.value.has(d.source) && highlightNeighborhood.value.has(d.target);
-      return isFocus ? 1.0 : 0.1;
+      const s = linkEndpointId(d.source);
+      const t = linkEndpointId(d.target);
+      if (!showAllLabels) {
+        const isFocus = highlightNeighborhood.value.has(s) && highlightNeighborhood.value.has(t);
+        return isFocus ? 0.95 : 0;
+      }
+      if (highlightNeighborhood.value.size === 0) return 0.35;
+      const isFocus = highlightNeighborhood.value.has(s) && highlightNeighborhood.value.has(t);
+      return isFocus ? 1.0 : 0.08;
     })
     .text((d: any) => d.relationLabel);
 
@@ -276,11 +324,11 @@ const renderSimulation = () => {
     .attr('text-anchor', 'middle')
     .attr('dy', '.3em')
     .attr('fill', '#fff')
-    .attr('font-size', '8px')
+    .attr('font-size', (d: any) => d.type === 'Person'||d.type === 'School' ? '6px' : '8px')
     .attr('font-weight', 'bold')
     .text((d: any) => {
-      if (d.type === 'Person') return '印';
-      if (d.type === 'School') return '派';
+      if (d.type === 'Person') return '印人';
+      if (d.type === 'School') return '流派';
       if (d.type === 'ScriptStyle') return '墨';
       return '地';
     });
@@ -336,7 +384,7 @@ const renderSimulation = () => {
   });
 };
 
-watch([filteredLinks, filteredNodes, dimensions, highlightNeighborhood, () => props.selectedNode], () => {
+watch([filteredLinks, filteredNodes, dimensions, highlightNeighborhood, () => props.selectedNode, viewMode], () => {
   renderSimulation();
 }, { flush: 'post' });
 
@@ -373,89 +421,32 @@ const handleResetZoom = () => {
 </script>
 
 <template>
-  <div class="flex flex-col h-full bg-[#FCFAF7] border border-[#E9E4DC] rounded-xl shadow-sm overflow-hidden relative" id="graph_container">
-    <!-- Upper filter bar -->
-    <div class="px-4 py-3 bg-[#F4EFE6] border-b border-[#E9E4DC] flex flex-wrap gap-2 md:gap-4 items-center justify-between text-xs text-[#5C5246] font-sans">
-      <div class="flex items-center gap-1.5 font-medium">
-        <Filter class="w-3.5 h-3.5 text-[#8C2D19]" />
-        <span>金石关系拓扑层展示</span>
+  <div class="flex flex-col h-full overflow-hidden relative" id="graph_container">
+    <div class="px-4 py-2 bg-white border-b border-[#E9E4DC] flex flex-wrap gap-2 items-center justify-between text-xs text-[#5C5246] font-sans shrink-0">
+      <div class="flex rounded-md border border-[#E9E4DC] p-0.5 bg-[#FAF8F5]">
+        <button
+          type="button"
+          @click="applyViewMode('person')"
+          :class="['px-2.5 py-1 rounded text-[11px] cursor-pointer transition-colors', viewMode === 'person' ? 'bg-white shadow-sm text-[#8C2D19] font-medium' : 'hover:text-[#2D241E]']"
+        >
+          人物网络
+        </button>
+        <button
+          type="button"
+          @click="applyViewMode('school')"
+          :class="['px-2.5 py-1 rounded text-[11px] cursor-pointer transition-colors', viewMode === 'school' ? 'bg-white shadow-sm text-[#8C2D19] font-medium' : 'hover:text-[#2D241E]']"
+        >
+          流派视图
+        </button>
       </div>
-      <div class="flex flex-wrap gap-3">
-        <label class="flex items-center gap-1 cursor-pointer hover:text-[#2D241E]">
-          <input
-            type="checkbox"
-            v-model="showRelations.family"
-            class="rounded border-[#C1B5A3] text-[#8C2D19] focus:ring-[#8C2D19] w-3.5 h-3.5 cursor-pointer"
-          />
-          <span>血亲</span>
-        </label>
-        <label class="flex items-center gap-1 cursor-pointer hover:text-[#2D241E]">
-          <input
-            type="checkbox"
-            v-model="showRelations.mentorship"
-            class="rounded border-[#C1B5A3] text-[#8C2D19] focus:ring-[#8C2D19] w-3.5 h-3.5 cursor-pointer"
-          />
-          <span>师承</span>
-        </label>
-        <label class="flex items-center gap-1 cursor-pointer hover:text-[#2D241E]">
-          <input
-            type="checkbox"
-            v-model="showRelations.friendship"
-            class="rounded border-[#C1B5A3] text-[#8C2D19] focus:ring-[#8C2D19] w-3.5 h-3.5 cursor-pointer"
-          />
-          <span>交游</span>
-        </label>
-        <label class="flex items-center gap-1 cursor-pointer hover:text-[#2D241E]">
-          <input
-            type="checkbox"
-            v-model="showRelations.school"
-            class="rounded border-[#C1B5A3] text-[#8C2D19] focus:ring-[#8C2D19] w-3.5 h-3.5 cursor-pointer"
-          />
-          <span>印派</span>
-        </label>
-        <label class="flex items-center gap-1 cursor-pointer hover:text-[#2D241E]">
-          <input
-            type="checkbox"
-            v-model="showRelations.style"
-            class="rounded border-[#C1B5A3] text-[#8C2D19] focus:ring-[#8C2D19] w-3.5 h-3.5 cursor-pointer"
-          />
-          <span>印风</span>
-        </label>
-        <label class="flex items-center gap-1 cursor-pointer hover:text-[#2D241E]">
-          <input
-            type="checkbox"
-            v-model="showRelations.native"
-            class="rounded border-[#C1B5A3] text-[#8C2D19] focus:ring-[#8C2D19] w-3.5 h-3.5 cursor-pointer"
-          />
-          <span>籍地</span>
-        </label>
-      </div>
+      <p class="text-[10px] text-gray-400">
+        {{ viewMode === 'person' ? '仅展示印人间师承、交游与血亲关系' : '展示印人与流派归属' }}
+      </p>
     </div>
 
     <!-- Actual D3 drawing board -->
     <div ref="containerRef" class="flex-1 w-full bg-[#FAF7F2] relative overflow-hidden" style="min-height: 350px">
       <svg ref="svgRef" class="w-full h-full block" />
-
-      <!-- Legend -->
-      <div class="absolute left-3 bottom-3 p-2.5 bg-white/90 border border-[#E9E4DC] rounded-lg shadow-sm text-[10px] space-y-1.5 pointer-events-none text-[#5C5246] max-w-[130px] font-sans">
-        <div class="font-bold border-b border-gray-100 pb-1 mb-1 text-center">图例要素</div>
-        <div class="flex items-center gap-1.5">
-          <span class="w-2.5 h-2.5 rounded-full bg-[#412C1E] inline-block" />
-          <span>人物 (印生)</span>
-        </div>
-        <div class="flex items-center gap-1.5">
-          <span class="w-2.5 h-2.5 rounded-full bg-[#1E3F20] inline-block" />
-          <span>印社流派</span>
-        </div>
-        <div class="flex items-center gap-1.5">
-          <span class="w-2.5 h-2.5 rounded-full bg-[#9E7415] inline-block" />
-          <span>金石印风</span>
-        </div>
-        <div class="flex items-center gap-1.5">
-          <span class="w-2.5 h-2.5 rounded-full bg-[#1F3447] inline-block" />
-          <span>地理籍贯</span>
-        </div>
-      </div>
 
       <!-- Floating Zoom Console -->
       <div class="absolute right-3 bottom-3 flex flex-col gap-1 bg-white border border-[#E9E4DC] rounded-lg p-1 shadow-sm">

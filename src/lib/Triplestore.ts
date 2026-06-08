@@ -447,89 +447,78 @@ export class Triplestore {
     const nodesMap = new Map<string, any>();
     const links: any[] = [];
 
-    // Helper to extract type from turtle mapping
-    const getEntityType = (id: string, label: string): 'Person' | 'School' | 'ScriptStyle' | 'Location' => {
-      if (id.startsWith('ex:')) {
-        const lowerId = id.toLowerCase();
-        if (lowerId.endsWith('school')) return 'School';
-        if (lowerId.endsWith('style') || lowerId.endsWith('script') || lowerId.endsWith('seals')) return 'ScriptStyle';
-        if (id === 'ex:Shaoxing' || id === 'ex:Suzhou' || id === 'ex:Hangzhou' || id === 'ex:Huizhou' || id === 'ex:An慶' || id === 'ex:ShaoxingMin' || id === 'ex:Ningbo') return 'Location';
-      }
-      return 'Person';
+    const schemaEntities = new Set<string>();
+    const instanceTypes = new Map<string, 'Person' | 'School' | 'ScriptStyle' | 'Location'>();
+
+    const RELATION_PREDICATES = new Set([
+      'ex:father', 'ex:child', 'ex:studentOf', 'ex:teacherOf',
+      'ex:interactedWith', 'ex:founderOf', 'ex:schoolMemberOf',
+      'ex:practicedStyle', 'ex:nativePlace',
+    ]);
+
+    const RELATION_LABELS: Record<string, string> = {
+      'ex:father': '父亲',
+      'ex:child': '子女',
+      'ex:studentOf': '师从',
+      'ex:teacherOf': '授学',
+      'ex:interactedWith': '交游',
+      'ex:founderOf': '开创',
+      'ex:schoolMemberOf': '所属流派',
+      'ex:practicedStyle': '精通艺术',
+      'ex:nativePlace': '籍贯',
     };
 
-    // First pass to identify entities and labels
+    // Pass 1: distinguish ontology schema from data instances
     this.triples.forEach(t => {
-      const { subject, predicate, object } = t;
-
-      if (subject.startsWith('ex:')) {
-        if (!nodesMap.has(subject)) {
-          nodesMap.set(subject, {
-            id: subject,
-            label: subject.substring(3),
-            type: getEntityType(subject, '')
-          });
-        }
+      if (t.predicate !== 'rdf:type') return;
+      if (t.object === 'rdfs:Class' || t.object === 'rdf:Property') {
+        schemaEntities.add(t.subject);
+        return;
       }
-
-      if (object.startsWith('ex:')) {
-        if (!nodesMap.has(object)) {
-          nodesMap.set(object, {
-            id: object,
-            label: object.substring(3),
-            type: getEntityType(object, '')
-          });
-        }
-      }
+      if (t.object === 'ex:Person') instanceTypes.set(t.subject, 'Person');
+      else if (t.object === 'ex:School') instanceTypes.set(t.subject, 'School');
+      else if (t.object === 'ex:ScriptStyle') instanceTypes.set(t.subject, 'ScriptStyle');
+      else if (t.object === 'ex:Location') instanceTypes.set(t.subject, 'Location');
     });
 
-    // Second pass: extract labels, dynasties and direct attributes
+    const isInstance = (id: string) => instanceTypes.has(id) && !schemaEntities.has(id);
+
+    // Pass 2: register instance nodes only
+    instanceTypes.forEach((type, id) => {
+      if (schemaEntities.has(id)) return;
+      nodesMap.set(id, { id, label: id.substring(3), type });
+    });
+
+    // Pass 3: enrich labels and attributes
     this.triples.forEach(t => {
       const { subject, predicate, object } = t;
-
-      if (!subject.startsWith('ex:')) return;
+      if (!isInstance(subject)) return;
       const node = nodesMap.get(subject);
       if (!node) return;
 
       const objClean = object.replace(/^"|"$/g, '');
-
-      if (predicate === 'rdfs:label') {
-        node.label = objClean;
-      } else if (predicate === 'ex:dynasty') {
-        node.dynasty = objClean;
-      } else if (predicate === 'ex:introduction') {
-        node.intro = objClean;
-      }
+      if (predicate === 'rdfs:label') node.label = objClean;
+      else if (predicate === 'ex:dynasty') node.dynasty = objClean;
+      else if (predicate === 'ex:introduction') node.intro = objClean;
     });
 
-    // Third pass: build standard visual edges
+    // Pass 4: relationship edges between instances only
     this.triples.forEach(t => {
       const { subject, predicate, object } = t;
-      if (!subject.startsWith('ex:') || !object.startsWith('ex:')) return;
-
-      // Map predicates to nice human Chinese labels
-      let relationLabel = predicate;
-      if (predicate === 'ex:father') relationLabel = '父亲';
-      else if (predicate === 'ex:child') relationLabel = '子女';
-      else if (predicate === 'ex:studentOf') relationLabel = '师从';
-      else if (predicate === 'ex:teacherOf') relationLabel = '授学';
-      else if (predicate === 'ex:interactedWith') relationLabel = '交游';
-      else if (predicate === 'ex:founderOf') relationLabel = '开创';
-      else if (predicate === 'ex:schoolMemberOf') relationLabel = '所属流派';
-      else if (predicate === 'ex:practicedStyle') relationLabel = '精通艺术';
-      else if (predicate === 'ex:nativePlace') relationLabel = '籍贯';
+      if (!RELATION_PREDICATES.has(predicate)) return;
+      if (!isInstance(subject) || !isInstance(object)) return;
 
       links.push({
         source: subject,
         target: object,
         relation: predicate,
-        relationLabel
+        relationLabel: RELATION_LABELS[predicate] || predicate,
       });
     });
 
     return {
       nodes: Array.from(nodesMap.values()),
-      links
+      links,
     };
   }
 }

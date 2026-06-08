@@ -1,15 +1,42 @@
-import { GraphData, CentralityScore, CommunityGroup, ShortestPathResult } from '../types';
+import {
+  GraphData,
+  CentralityScore,
+  CommunityGroup,
+  ShortestPathResult,
+  SchoolAnalysis,
+  SchoolAnalysisResult,
+  SchoolBridge,
+  SchoolEvolution,
+  SchoolFigure,
+} from '../types';
+
+const SOCIAL_RELATIONS = new Set([
+  'ex:father', 'ex:child', 'ex:studentOf', 'ex:teacherOf', 'ex:interactedWith',
+]);
 
 /**
  * High-precision graph algorithms for Caligraphers & Seal Engravers network.
  */
 export class GraphAnalysis {
+  /** Person-only subgraph using师承/交游/血亲 edges for centrality and path analysis. */
+  private static personSocialGraph(graph: GraphData): GraphData {
+    const nodes = graph.nodes.filter(n => n.type === 'Person');
+    const personIds = new Set(nodes.map(n => n.id));
+    const links = graph.links.filter(l => {
+      if (!SOCIAL_RELATIONS.has(l.relation)) return false;
+      const s = typeof l.source === 'string' ? l.source : (l.source as any).id;
+      const t = typeof l.target === 'string' ? l.target : (l.target as any).id;
+      return personIds.has(s) && personIds.has(t);
+    });
+    return { nodes, links };
+  }
+
   /**
    * Calculates Degree Centrality and Betweenness Centrality exactly.
    * Uses real BFS path-counting for Betweenness (Brandes-style logic for small graphs).
    */
   public static analyzeCentrality(graph: GraphData): CentralityScore[] {
-    const { nodes, links } = graph;
+    const { nodes, links } = this.personSocialGraph(graph);
     const n = nodes.length;
     if (n === 0) return [];
 
@@ -184,11 +211,9 @@ export class GraphAnalysis {
     for (const [name, members] of Object.entries(communities)) {
       if (members.length === 0) continue;
 
-      // Select person with highest degree centrality as de facto leader
-      let leaderName = members[0].label;
       output.push({
         communityId: index++,
-        leader: name === '未有专属流派/独立巨匹' ? '篆刻大师' : leaderName,
+        leader: name,
         members
       });
     }
@@ -200,7 +225,7 @@ export class GraphAnalysis {
    * Computes shortest path/lineage between two nodes in the network using Breadth First Search (BFS).
    */
   public static findShortestPath(graph: GraphData, startId: string, endId: string): ShortestPathResult {
-    const { nodes, links } = graph;
+    const { nodes, links } = this.personSocialGraph(graph);
 
     if (!nodes.some(n => n.id === startId) || !nodes.some(n => n.id === endId)) {
       return { found: false, path: [], edges: [] };
@@ -269,6 +294,126 @@ export class GraphAnalysis {
       path: labelPath,
       edges
     };
+  }
+
+  /**
+   * Analyzes seal-engraving schools: founders, core figures, cross-school bridges, and historical evolution.
+   */
+  public static analyzeSchools(graph: GraphData): SchoolAnalysisResult {
+    const { nodes, links } = graph;
+    const schoolNodes = nodes.filter(n => n.type === 'School');
+    const personMap = new Map(nodes.filter(n => n.type === 'Person').map(n => [n.id, n]));
+    const centralities = this.analyzeCentrality(graph);
+    const centralityMap = new Map(centralities.map(c => [c.id, c]));
+
+    const personSchool: Record<string, string> = {};
+    const schoolMembers: Record<string, string[]> = {};
+    const schoolFounders: Record<string, string> = {};
+
+    schoolNodes.forEach(s => {
+      schoolMembers[s.id] = [];
+    });
+
+    links.forEach(link => {
+      const s = typeof link.source === 'string' ? link.source : (link.source as any).id;
+      const t = typeof link.target === 'string' ? link.target : (link.target as any).id;
+
+      if (link.relation === 'ex:founderOf') {
+        schoolFounders[t] = s;
+        personSchool[s] = t;
+        if (!schoolMembers[t].includes(s)) schoolMembers[t].push(s);
+      }
+      if (link.relation === 'ex:schoolMemberOf') {
+        personSchool[s] = t;
+        if (!schoolMembers[t].includes(s)) schoolMembers[t].push(s);
+      }
+    });
+
+    const toFigure = (id: string, role: SchoolFigure['role']): SchoolFigure => {
+      const node = personMap.get(id);
+      return {
+        id,
+        label: node?.label || id.replace('ex:', ''),
+        role,
+        dynasty: node?.dynasty,
+      };
+    };
+
+    const schools: SchoolAnalysis[] = schoolNodes.map(school => {
+      const memberIds = schoolMembers[school.id] || [];
+      const founderId = schoolFounders[school.id];
+      const sortedByDegree = [...memberIds].sort(
+        (a, b) => (centralityMap.get(b)?.degreeCentrality || 0) - (centralityMap.get(a)?.degreeCentrality || 0)
+      );
+
+      const coreIds = sortedByDegree.slice(0, 3).filter(id => id !== founderId);
+      const dynasties = memberIds
+        .map(id => personMap.get(id)?.dynasty)
+        .filter(Boolean) as string[];
+      const period = dynasties.length > 0 ? [...new Set(dynasties)].join('、') : '—';
+
+      const members: SchoolFigure[] = memberIds.map(id =>
+        toFigure(id, founderId === id ? '开创者' : '成员')
+      );
+
+      return {
+        schoolId: school.id,
+        schoolLabel: school.label,
+        founder: founderId ? toFigure(founderId, '开创者') : undefined,
+        coreFigures: coreIds.map(id => toFigure(id, '核心人物')),
+        memberCount: memberIds.length,
+        members,
+        period,
+      };
+    }).sort((a, b) => b.memberCount - a.memberCount);
+
+    const schoolLabel = (schoolId: string) =>
+      schoolNodes.find(s => s.id === schoolId)?.label || schoolId.replace('ex:', '');
+
+    const bridges: SchoolBridge[] = [];
+    const bridgeKeys = new Set<string>();
+
+    links.forEach(link => {
+      if (!['ex:studentOf', 'ex:teacherOf', 'ex:interactedWith'].includes(link.relation)) return;
+
+      const s = typeof link.source === 'string' ? link.source : (link.source as any).id;
+      const t = typeof link.target === 'string' ? link.target : (link.target as any).id;
+      const schoolS = personSchool[s];
+      const schoolT = personSchool[t];
+
+      if (!schoolS || !schoolT || schoolS === schoolT) return;
+      if (!personMap.has(s) || !personMap.has(t)) return;
+
+      const key = [s, t].sort().join('|');
+      if (bridgeKeys.has(key)) return;
+      bridgeKeys.add(key);
+
+      bridges.push({
+        personA: personMap.get(s)!.label,
+        personB: personMap.get(t)!.label,
+        schoolA: schoolLabel(schoolS),
+        schoolB: schoolLabel(schoolT),
+        relation: link.relationLabel,
+      });
+    });
+
+    const evolution: SchoolEvolution[] = schools
+      .filter(s => s.founder)
+      .map(s => ({
+        era: s.period,
+        schools: [s.schoolLabel],
+        note: `${s.founder!.label} 开创${s.schoolLabel}`,
+        sortKey: personMap.get(s.founder!.id)?.dynasty || '',
+      }))
+      .sort((a, b) => {
+        const order = ['明', '清', '晚清 / 民国'];
+        const ai = order.findIndex(d => a.sortKey.includes(d));
+        const bi = order.findIndex(d => b.sortKey.includes(d));
+        return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi);
+      })
+      .map(({ era, schools: s, note }) => ({ era, schools: s, note }));
+
+    return { schools, bridges, evolution };
   }
 
   // Undirected edge neighbor retrieval
